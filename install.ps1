@@ -53,8 +53,9 @@ New-Item -Path $ExtractDir -ItemType Directory -Force | Out-Null
 
 # Ekstrak dengan 7-Zip
 Write-Host "proses2..." -ForegroundColor Green
-$extractProcess = Start-Process -FilePath "7z.exe" -ArgumentList "x `"$ZipFile`" -o`"$ExtractDir`" -y" -Wait -NoNewWindow -PassThru
-
+$extractProcess = Start-Process -FilePath "7z.exe" `
+    -ArgumentList "x `"$ZipFile`" -o`"$ExtractDir`" -y -bse0 -bsp0" `
+    -Wait -NoNewWindow -PassThru
 if ($extractProcess.ExitCode -ne 0) {
     Write-Host "Gagal mengekstrak file ZIP dengan 7-Zip" -ForegroundColor Red
     exit
